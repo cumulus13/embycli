@@ -49,7 +49,7 @@ class Embycli(object):
 			sys.exit(make_colors("Invalid Token API !", 'lw', 'lr', ['blink']))
 		else:
 			api = api.split(",")
-			
+		
 		if not host:
 			host = self.host
 		if not host:
@@ -158,7 +158,7 @@ class Embycli(object):
 			port = self.config.get_config('host', 'port', '8096')
 		if not port:
 			port = raw_input(make_colors("Host Port: ", 'lw', 'lr', ['blink']))
-		if not self.api:
+		if not port:
 			print(make_colors("No Port given !, use default port: 8096", 'b', 'ly', ['blink']))
 			port = '8096'
 		if write_api:

@@ -29,13 +29,13 @@ class Embycli(object):
 		self.configname = os.path.join(os.path.dirname(__file__), 'embycli.ini')
 		self.config = configset(self.configname)
 		self.api = api
-		self.default_api = self.config.get_config('auth', 'api')		
+		self.default_api = self.config.get_config('auth', 'api')
 		self.host = host
 		self.port = port
 		self.url = None
 		self.headers = {'Content-Type': 'application/json'}
 		self.session = None
-		
+
 	def get_api(self, host = None, port = None, api = None):
 		if not api:
 			api = self.api
@@ -49,7 +49,7 @@ class Embycli(object):
 			sys.exit(make_colors("Invalid Token API !", 'lw', 'lr', ['blink']))
 		else:
 			api = api.split(",")
-		
+
 		if not host:
 			host = self.host
 		if not host:
@@ -58,7 +58,7 @@ class Embycli(object):
 			host = raw_input(make_colors("Host IP/Domain address: ", 'lw', 'lr', ['blink']))
 		if not host:
 			sys.exit(make_colors("Invalid IP/Domain Host address !", 'lw', 'lr', ['blink']))
-		
+
 		if not port:
 			port = self.port
 		if not port:
@@ -76,7 +76,7 @@ class Embycli(object):
 				headers = {'X-Emby-Token':str(ap)}
 				session.headers.update(headers)
 				self.url = 'http://' + str(host) + ":" + str(port)
-				
+
 				url = self.url + "/emby/Auth/Keys"
 				params = {
 					'SortBy': 'IsFolder,SortName',
@@ -120,10 +120,10 @@ class Embycli(object):
 							list_api.append(it.get('AccessToken'))
 					debug(list_api = list_api)
 					if list_api:
-						break				
+						break
 			return list_api
 		return []
-		
+
 	def get_config(self, host = None, port = None, api = None, write_api = False):
 		session = None
 		if not api:
@@ -139,7 +139,7 @@ class Embycli(object):
 		else:
 			if write_api:
 				self.config.write_config('auth', 'api', api)
-		
+
 		if not host:
 			host = self.host
 		if not host:
@@ -151,7 +151,7 @@ class Embycli(object):
 		else:
 			if write_api:
 				self.config.write_config('host', 'ip', host)
-			
+
 		if not port:
 			port = self.port
 		if not port:
@@ -163,7 +163,7 @@ class Embycli(object):
 			port = '8096'
 		if write_api:
 			self.config.write_config('host', 'port', port)
-			
+
 		if port:
 			try:
 				port = int(port)
@@ -184,7 +184,7 @@ class Embycli(object):
 			else:
 				session = requests.Session()
 				headers = {'X-Emby-Token':str(api)}
-				session.headers.update(headers)				
+				session.headers.update(headers)
 		else:
 			api = self.get_api(host, port, api)
 			if api:
@@ -192,19 +192,19 @@ class Embycli(object):
 				headers = {'X-Emby-Token':str(api[0])}
 				session.headers.update(headers)
 		return session
-		
+
 	def setting_get_users(self):
 		if not self.session:
 			self.session = self.get_config()
 		url = self.url + "/emby/users"
 		return self.session.get(url, headers = self.headers).json()
-		
+
 	def setting_get_dlna(self):
 		if not self.session:
-			self.session = self.get_config()		
+			self.session = self.get_config()
 		url = self.url + "/emby/System/Configuration/dlna"
 		return self.session.get(url, headers = self.headers).json()
-		
+
 	def format_argument(self, argument):
 		arg = re.split("_", argument)
 		debug(arg = arg)
@@ -213,7 +213,7 @@ class Embycli(object):
 			arg_1.append(str(i).title())
 		debug(arg_1 = arg_1)
 		return "".join(arg_1)
-		
+
 	def setting_set_dlna(self, enable_server=True, enable_play_to=True, enable_debug_log=True, blast_alive_messages=True, client_discovery_interval_seconds=60, alive_message_interval_seconds=1800, default_user_id=None):
 		if not default_user_id:
 			default_user_id = self.setting_get_users()[0].get('Id')
@@ -236,12 +236,12 @@ class Embycli(object):
 		if client_discovery_interval_seconds == False or client_discovery_interval_seconds == 0:
 			client_discovery_interval_seconds = "false"
 		else:
-			client_discovery_interval_seconds =  "true"	
+			client_discovery_interval_seconds =  "true"
 		if alive_message_interval_seconds == False or alive_message_interval_seconds == 0:
 			alive_message_interval_seconds = "false"
 		else:
 			alive_message_interval_seconds =  "true"
-		
+
 		data = {
 			'EnableServer':enable_server,
 			'EnablePlayTo':enable_play_to,
@@ -256,17 +256,17 @@ class Embycli(object):
 		url = self.url + "/emby/System/Configuration/dlna"
 		debug(url = url)
 		if not self.session:
-			self.session = self.get_config()		
+			self.session = self.get_config()
 		a = self.session.post(url, data = data, headers = self.headers)
 		debug(a_url = a.url)
 		content = a.content
 		debug(content = content)
-		
+
 	def pack_library(self, library):
 		list_name = []
 		all_list_name = []
 		all_list_itemid = []
-		
+
 		for i in library:
 			if i.get('LibraryOptions').get('Name'):
 				list_name.append(
@@ -286,26 +286,27 @@ class Embycli(object):
 						})
 				all_list_name.append(i.get('Name').lower())
 				all_list_itemid.append(i.get('ItemId'))
-		
+
 		return list_name, all_list_name, all_list_itemid
-		
-		
+
+
 	def refresh_library(self, itemid=None, name = None, replace_all_image=False, replace_all_metadata=False):
 		headers = {'Content-Type': 'application/json'}
 		debug(self_url = self.url)
-		
+#		http://127.0.0.1:8096/emby/Items/17753/Refresh?Recursive=true&ImageRefreshMode=Default&MetadataRefreshMode=Default&ReplaceAllImages=false&ReplaceAllMetadata=false&X-Emby-Client=Emby
 		url = self.url + "/emby/Items/{0}/Refresh"
 		params = {
 			'Recursive':'true',
 			'ImageRefreshMode':'Default',
 			'MetadataRefreshMode':'Default',
 			'ReplaceAllImages':str(replace_all_image).lower(),
-			'ReplaceAllMetadata':str(replace_all_metadata).lower()
+			'ReplaceAllMetadata':str(replace_all_metadata).lower(),
+			'X-Emby-Client':'Emby'
 		}
 		debug(params = params)
 		library = self.get_library()
 		debug(library = library)
-		
+
 		n = 1
 		list_name, all_list_name, all_list_itemid = self.pack_library(library)
 		debug(list_name = list_name)
@@ -329,7 +330,7 @@ class Embycli(object):
 		debug(name = name)
 		debug(itemid = itemid)
 		if not self.session:
-			self.session = self.get_config()		
+			self.session = self.get_config()
 		print(make_colors(name, 'lw', 'bl') + " [" + make_colors(itemid, 'lg') + "] " + make_colors(' is refresing in schedule ...', 'lc'))
 		a = self.session.post(url, json = params, headers = headers)
 		debug(a_url = a.url)
@@ -338,7 +339,7 @@ class Embycli(object):
 		code = a.status_code
 		debug(code = code)
 		return code
-	
+
 	def print_paths(self, name=None, itemid=None, list_name = []):
 		debug(itemid = itemid)
 		#all_list_name = []
@@ -396,10 +397,10 @@ class Embycli(object):
 			if list_name_return:
 				return self.print_paths(list_name = list_name_return)
 		return list_name
-			
+
 	def get_library(self):
 		if not self.session:
-			self.session = self.get_config()		
+			self.session = self.get_config()
 		url = self.url + "/emby/Library/VirtualFolders"
 		try:
 			content = self.session.get(url).json()
@@ -409,7 +410,7 @@ class Embycli(object):
 			sys.exit(make_colors("Invalid API or Error connection !", 'lw', 'lr', ['blink']))
 		debug(content = content)
 		return content
-		
+
 	def delete_library(self, path, name=None, itemid=None):
 		if not name and not itemid:
 			library = self.get_library()
@@ -441,7 +442,7 @@ class Embycli(object):
 			if not path_is_exists:
 				print(make_colors("Path Not Exists on Library !:", 'lw', 'lr', ['blink']))
 				return False
-			
+
 			if len(list_path_exists) > 1:
 				ns = 1
 				for i in list_path_exists:
@@ -466,13 +467,115 @@ class Embycli(object):
 		}
 		debug(params = params)
 		if not self.session:
-			self.session = self.get_config()		
+			self.session = self.get_config()
 		a = self.session.delete(url, params = params, headers = headers)
 		debug(a_url = a.url)
 		content = a.content
 		debug(content = content)
 		return a.status_code
-		
+
+	def create_library(self, name, dtype, path = []):
+		headers = {'Content-Type': 'application/json'}
+		# url = self.url + "/emby/Library/AddVirtualFolder?collectionType={}&refreshLibrary=true&name={}&X-Emby-Client=Emby Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=a4b67032-4dc0-4080-aaea-e4f0bbd74c93&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=80e519ca490243ef8e88d1ca5f711988".format(dtype, name)
+		# url = self.url + "/emby/Library/VirtualFolder?collectionType={}&refreshLibrary=true&name={}&X-Emby-Client=Emby Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=a4b67032-4dc0-4080-aaea-e4f0bbd74c93&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=80e519ca490243ef8e88d1ca5f711988".format(dtype, name)
+		#http://127.0.0.1:8096/emby/Library/VirtualFolders?collectionType=games&refreshLibrary=true&name=Games&X-Emby-Client=Emby%20Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=a4b67032-4dc0-4080-aaea-e4f0bbd74c93&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=80e519ca490243ef8e88d1ca5f711988
+		#http://127.0.0.1:8096/emby/Library/VirtualFolders?collectionType=games&refreshLibrary=true&name=Games&X-Emby-Client=Emby%20Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=a4b67032-4dc0-4080-aaea-e4f0bbd74c93&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=80e519ca490243ef8e88d1ca5f711988
+		url = self.url + "/emby/Library/VirtualFolders?collectionType={}&refreshLibrary=true&name={}&X-Emby-Client=Emby%20Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=a4b67032-4dc0-4080-aaea-e4f0bbd74c93&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=80e519ca490243ef8e88d1ca5f711988".format(dtype, name)
+		#url = self.url + "/emby/Library/VirtualFolder?collectionType={}&refreshLibrary=true&name={}".format(dtype, name)
+		debug(url = url, debug = True)
+		PathInfos = []
+		if path:
+			for i in path:
+				add = {}
+				add = {"Path": i}
+				PathInfos.append(add)
+
+		data = {
+			"LibraryOptions":{
+				"EnableArchiveMediaFiles":"false",
+				"EnablePhotos":"true",
+				"EnableRealtimeMonitor":"true",
+				"ExtractChapterImagesDuringLibraryScan":"false",
+				"EnableChapterImageExtraction":"false",
+				"SaveLocalThumbnailSets":"false",
+				"ThumbnailImagesIntervalSeconds":"10",
+				"DownloadImagesInAdvance":"false",
+				"EnableInternetProviders":"true",
+				"ImportMissingEpisodes":"false",
+				"SaveLocalMetadata":"false",
+				"EnableAutomaticSeriesGrouping":"true",
+				"PreferredMetadataLanguage":"",
+				"PreferredImageLanguage":"",
+				"MetadataCountryCode":"",
+				"SeasonZeroDisplayName":"Specials",
+				"AutomaticRefreshIntervalDays":"30",
+				"EnableEmbeddedTitles":"false",
+				"SkipSubtitlesIfEmbeddedSubtitlesPresent":"false",
+				"SkipSubtitlesIfAudioTrackMatches":"false",
+				"SaveSubtitlesWithMedia":"true",
+				"RequirePerfectSubtitleMatch":"false",
+				"EnableAudioResume":"false",
+				"MinResumePct":"5",
+				"MaxResumePct":"90",
+				"MinResumeDurationSeconds":"180",
+				"MusicFolderStructure":"null",
+				"MetadataSavers":["Nfo"],
+				"TypeOptions":
+					[{
+						"Type":"Movie",
+						"MetadataFetchers":[
+							"TheMovieDb",
+							"The Open Movie Database",
+							"Douban"
+						],
+						"MetadataFetcherOrder":[
+							"TheMovieDb",
+							"The Open Movie Database",
+							"Douban"
+						],
+						"ImageFetchers":[
+							"TheMovieDb",
+							"FanArt",
+							"Douban",
+							"The Open Movie Database",
+							"Screen Grabber"
+						],
+						"ImageFetcherOrder":[
+							"TheMovieDb",
+							"FanArt",
+							"Douban",
+							"The Open Movie Database",
+							"Screen Grabber"
+						]
+					}],
+				"LocalMetadataReaderOrder":[
+					"Nfo",
+					"Emby Xml"
+				],
+				"SubtitleDownloadLanguages":["id"],
+				"DisabledSubtitleFetchers":[],
+				"SubtitleFetcherOrder":[
+					"Open Subtitles","Addic7ed","NapiSub","SubDB","Podnapisi"],
+				"PathInfos":PathInfos,
+				"ContentType":"movies"
+			}
+		}
+
+		if not self.session:
+			self.session = self.get_config()
+
+		try:
+			# content = self.session.post(url, data = data).json()
+			pprint(data)
+			debug(url = url)
+			content = requests.post(url, data = data, headers = headers).content
+		except:
+			#print(make_colors("Invalid API or Error connection !", 'lw', 'lr', ['blink']))
+			print("\n")
+			sys.exit(make_colors("Invalid API or Error connection !", 'lw', 'lr', ['blink']))
+		debug(content = content)
+		return content
+
 	def add_library(self, path, name = None, itemid = None):
 		headers = {'Content-Type': 'application/json'}
 		url = self.url + "/emby/Library/VirtualFolders/Paths?refreshLibrary=true"
@@ -519,12 +622,12 @@ class Embycli(object):
 			"PathInfo":{"Path":path},
 			"Id":str(itemid),
 		}
-			
+
 		data_post = json.dumps(data_post)
 		#params = {'path':path}
 		#params1 = {'api_key':self.api}
 		debug(data_post = data_post)
-		
+
 		path_exists = False
 		for i in list_name:
 			for x in i.get('path'):
@@ -540,7 +643,7 @@ class Embycli(object):
 				return False, False
 		debug(url = url)
 		if not self.session:
-			self.session = self.get_config()		
+			self.session = self.get_config()
 		a = self.session.post(url, data = data_post, headers = headers)
 		debug(a_content = a.content)
 		debug(a_url = a.url)
@@ -549,13 +652,40 @@ class Embycli(object):
 		self.refresh_library(itemid, name)
 		self.print_paths()
 		return name, itemid
-		
+
+	def example_url(self):
+		#url get folder
+		url1 = "http://127.0.0.1:8096/emby/Users/01934680e84a418da88fd48736965014/Items?SortBy=IsFolder,SortName&SortOrder=Ascending&Recursive=false&Fields=BasicSyncInfo,CanDelete,PrimaryImageAspectRatio&ImageTypeLimit=1&EnableImageTypes=Primary,Backdrop,Thumb&StartIndex=0&Limit=50&ParentId=3b10751f11093c6a4fe61529d4bea115&X-Emby-Client=Emby"
+		#refresh item
+		url2 = "http://127.0.0.1:8096/emby/Items/17753/Refresh?Recursive=true&ImageRefreshMode=Default&MetadataRefreshMode=Default&ReplaceAllImages=false&ReplaceAllMetadata=false&X-Emby-Client=Emby"
+		#get item on folder
+		url3 = "http://127.0.0.1:8096/emby/Users/01934680e84a418da88fd48736965014/Items?SortBy=DateCreated,SortName&SortOrder=Descending&Fields=BasicSyncInfo,CanDelete,PrimaryImageAspectRatio,ProductionYear,Status,EndDate&ImageTypeLimit=1&EnableImageTypes=Primary,Backdrop,Thumb&StartIndex=0&Limit=50&ParentId=17753&X-Emby-Client=Emby"
+		#refresh item on folder
+		url4 = "http://127.0.0.1:8096/emby/Items/231627/Refresh?Recursive=true&ImageRefreshMode=Default&MetadataRefreshMode=Default&ReplaceAllImages=false&ReplaceAllMetadata=false&X-Emby-Client=Emby"
+		#get season list
+		url5 = "http://127.0.0.1:8096/emby/Shows/231627/Seasons?UserId=01934680e84a418da88fd48736965014&Fields=PrimaryImageAspectRatio%2CBasicSyncInfo%2CCanDelete%2CProductionYear&EnableTotalRecordCount=false&X-Emby-Client=Emby%20Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=69df499a-715a-477d-b244-664c59d9846b&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=d169a855d1df4eafa5a5f035b781c75f"
+		url6 = "http://127.0.0.1:8096/emby/Users/01934680e84a418da88fd48736965014/Items/231629?X-Emby-Client=Emby%20Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=69df499a-715a-477d-b244-664c59d9846b&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=d169a855d1df4eafa5a5f035b781c75f"
+		#get list of season
+		url7 = "http://127.0.0.1:8096/emby/Shows/231627/Episodes?SeasonId=231629&ImageTypeLimit=1&UserId=01934680e84a418da88fd48736965014&Fields=Overview%2CPrimaryImageAspectRatio&X-Emby-Client=Emby%20Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=69df499a-715a-477d-b244-664c59d9846b&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=d169a855d1df4eafa5a5f035b781c75f"
+		#get list of season on front
+		url8 = "http://127.0.0.1:8096/emby/Shows/NextUp?SeriesId=231627&Fields=PrimaryImageAspectRatio%2CCanDelete&ImageTypeLimit=1&EnableTotalRecordCount=false&Limit=12&UserId=01934680e84a418da88fd48736965014&X-Emby-Client=Emby%20Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=69df499a-715a-477d-b244-664c59d9846b&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=d169a855d1df4eafa5a5f035b781c75f"
+		#set un-played (DELETE)
+		url9 = "http://127.0.0.1:8096/emby/Users/01934680e84a418da88fd48736965014/PlayedItems/232962?X-Emby-Client=Emby%20Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=69df499a-715a-477d-b244-664c59d9846b&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=d169a855d1df4eafa5a5f035b781c75f"
+		#set played (POST)
+		url10 = "http://127.0.0.1:8096/emby/Users/01934680e84a418da88fd48736965014/PlayedItems/232962?X-Emby-Client=Emby%20Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=69df499a-715a-477d-b244-664c59d9846b&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=d169a855d1df4eafa5a5f035b781c75f"
+		#delete info
+		url11 = "http://127.0.0.1:8096/emby/Items/232962/DeleteInfo?X-Emby-Client=Emby%20Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=69df499a-715a-477d-b244-664c59d9846b&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=d169a855d1df4eafa5a5f035b781c75f"
+
+
 	def usage(self):
 		parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 		parser.add_argument('-H', '--host', help = 'Host/Ip emby server', action = 'store')
 		parser.add_argument('-P', '--port', help = 'Port emby server, default: 8096', action = 'store', default = 8096)
 		parser.add_argument('--api', help = 'Api key', action = 'store')
-		parser.add_argument('-a', '--add', help='Add path to library', action='store')
+		parser.add_argument('-c', '--create', help='Create Library then Add path to library with type library defined', action='store')
+		parser.add_argument('-t', '--type', help='Type of create Library', action='store')
+		parser.add_argument('-p', '--path', help='Path of create Library can be multiply same as "-a" or "--add"', action='store', nargs="*")
+		parser.add_argument('-a', '--add', help='Add path to library can be multiply same as "-p" or "--path"', action='store', nargs="*")
 		parser.add_argument('-n', '--name', help='Name of library add to', action='store')
 		parser.add_argument('-i', '--itemid', help='Item id of library either name add to', action='store')
 		parser.add_argument('-l', '--print-path', help='Print all of path of library',action='store_true')
@@ -581,19 +711,32 @@ class Embycli(object):
 				self.session = self.get_config(args.host, args.port, args.api)
 			self.session = self.get_config(args.host, args.port, args.api, args.write_config)
 			if args.add:
-				self.add_library(args.add, args.name, args.itemid)
+				for i in args.add:
+					self.add_library(i, args.name, args.itemid)
 			elif args.delete:
-				self.delete_library(args.add, args.name, args.itemid)
+				if args.add:
+					for i in args.add:
+						self.delete_library(i, args.name, args.itemid)
+				elif args.path:
+					for i in args.path:
+						self.delete_library(i, args.name, args.itemid)
 			elif args.print_path:
 				self.print_paths(args.name, args.itemid)
 			elif args.refresh:
 				self.refresh_library(args.itemid, args.name)
+			elif (args.create and args.type and args.path) or (args.create and args.type and args.add):
+				if args.path:
+					path = args.path
+				elif args.add:
+					path = args.add
+				self.create_library(args.create, args.type, path)
+
 			if args.dlna_on:
 				self.setting_set_dlna(True)
 				pprint(self.setting_get_dlna())
 			elif args.dlna_off:
 				self.setting_set_dlna(False)
-			
+
 if __name__ == '__main__':
 	c = Embycli()
 	c.usage()

@@ -22,7 +22,8 @@ from pause import pause
 from configset import configset
 from pprint import pprint
 import json
-import inspect
+from jsoncolor import jprint
+#import inspect
 
 class Embycli(object):
 	def __init__(self, api = None, host = None, port = None):
@@ -35,6 +36,9 @@ class Embycli(object):
 		self.url = None
 		self.headers = {'Content-Type': 'application/json'}
 		self.session = None
+		self.user_id = self.config.get_config('auth', 'user_id')
+		self.device_id = self.config.get_config('device', 'id')
+		self.device_name = ""
 
 	def get_api(self, host = None, port = None, api = None):
 		if not api:
@@ -48,7 +52,8 @@ class Embycli(object):
 		if not api:
 			sys.exit(make_colors("Invalid Token API !", 'lw', 'lr', ['blink']))
 		else:
-			api = api.split(",")
+			if "," in api:
+				api = api.split(",")
 
 		if not host:
 			host = self.host
@@ -70,7 +75,7 @@ class Embycli(object):
 				port = int(port)
 			except:
 				sys.exit(make_colors("Invalid Port !", 'lw', 'lr', ['blink']))
-		if api and host and port:
+		if api and isinstance(api, list) and host and port:
 			for ap in api:
 				session = requests.Session()
 				headers = {'X-Emby-Token':str(ap)}
@@ -93,7 +98,7 @@ class Embycli(object):
 				debug(content = content)
 				debug(url = a.url)
 				list_api = []
-				if not 'invalid' in content or not 'expired' in content:
+				if not 'invalid' in content.decode('utf-8') or not 'expired' in content:
 					content = json.loads(content)
 					for it in content.get('Items'):
 						list_api.append(it.get('AccessToken'))
@@ -124,7 +129,10 @@ class Embycli(object):
 			return list_api
 		return []
 
-	def get_config(self, host = None, port = None, api = None, write_api = False):
+	def get_config(self, host = None, port = None, api = None, write_api = False): #requests.Session [Object]
+		'''
+		   @return: requests.Session [Object]
+		'''
 		session = None
 		if not api:
 			api = self.api
@@ -198,7 +206,46 @@ class Embycli(object):
 			self.session = self.get_config()
 		url = self.url + "/emby/users"
 		return self.session.get(url, headers = self.headers).json()
-
+	
+	def get_user(self):
+		self.session = self.session or self.get_config()
+		debug(self_session = self.session)
+		users_url = f"{self.url}/emby/Users"
+		params = {
+			'api_key': self.api
+		}
+		response = self.session.get(users_url, params=params)
+		data = response.json()
+		debug(data=data)
+		if list(filter(lambda k: 'debug' in k.lower(), os.environ)): jprint(data)
+		
+		USER_ID_DATA = []
+		# Display user IDs
+		for user in data:
+			print(f"Username: {user['Name']}, User ID: {user['Id']}")
+			USER_ID_DATA.append([user['Id'], user['Name']])
+		
+		if len(USER_ID_DATA) > 1:
+			n = 1
+			for u in USER_ID_DATA:
+				print(
+					make_colors(str(n).zfill(2), 'lc') + ". " +
+					make_colors(u[1], 'b', 'y') + " " +
+					make_colors(u[0], 'lw', 'bl')
+				)
+		
+			n += 1
+		
+			q = input(make_colors("Select user:", 'lw', 'r') + " ")
+			if q and q.isdigit() and int(q) <= len(USER_ID_DATA):
+				self.user_id = USER_ID_DATA[int(q) - 1][0]
+				return USER_ID_DATA[int(q) - 1][0]
+		else:
+			self.user_id = USER_ID_DATA[0][0]
+			return USER_ID_DATA[0][0]
+		
+		return ''
+		
 	def setting_get_dlna(self):
 		if not self.session:
 			self.session = self.get_config()
@@ -677,6 +724,162 @@ class Embycli(object):
 		url11 = "http://127.0.0.1:8096/emby/Items/232962/DeleteInfo?X-Emby-Client=Emby%20Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=69df499a-715a-477d-b244-664c59d9846b&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=d169a855d1df4eafa5a5f035b781c75f"
 
 
+	def get_devices(self):	
+		devices_url = f"{self.url}/emby/Sessions"
+		params = {
+			'api_key': self.api
+		}
+		
+		response = self.session.get(devices_url, params=params)
+		data = response.json()
+		debug(data=data)
+
+		if list(filter(lambda k: 'debug' in k.lower(), os.environ)): jprint(data)
+		
+		DEVICE_ID_DATA = []
+		#DEVICE_ID = ''
+		#DEVICE_NAME_SELECTED = ''
+		
+		# Display device IDs
+		for session in data:
+			device_id = session.get('DeviceId')
+			device_name = session.get('DeviceName')
+			if device_id and device_name:
+				print(f"Device Name: {device_name}, Device ID: {device_id}")
+				DEVICE_ID_DATA.append([device_id, device_name])
+		
+		if len(DEVICE_ID_DATA) > 1:
+			n = 1
+			for d in DEVICE_ID_DATA:
+				print(
+					make_colors(str(n).zfill(2), 'lc') + ". " +
+					make_colors(d[1], 'b', 'y') + " " +
+					make_colors(d[0], 'lw', 'bl')
+				)
+				n += 1
+		
+			q = input(make_colors("Select Device:", 'lw', 'r') + " ")
+			if q and q.isdigit() and int(q) <= len(DEVICE_ID_DATA):
+				#DEVICE_ID = DEVICE_ID_DATA[int(q) - 1][0]
+				#DEVICE_NAME_SELECTED = DEVICE_ID_DATA[int(q) - 1][1]
+				self.device_id = DEVICE_ID_DATA[int(q) - 1][0]
+				self.device_name = DEVICE_ID_DATA[int(q) - 1][1]
+				return DEVICE_ID_DATA[int(q) - 1]
+		else:
+			#DEVICE_ID = DEVICE_ID_DATA[0][0]
+			#DEVICE_NAME_SELECTED = DEVICE_ID_DATA[0][1]
+			self.device_id = DEVICE_ID_DATA[0][0]
+			self.device_name = DEVICE_ID_DATA[0][1]
+			return DEVICE_ID_DATA[0]
+		
+		return []
+		
+	def search (self, text):
+		
+		user_id = self.user_id or self.get_user()
+		device_id = self.device_id or self.get_devices()
+		
+		debug(device_id = device_id)
+		debug(self_device_name = self.device_name)
+
+		url = f"{self.url}/emby/Users/{user_id}/Items"
+		
+		debug(search_url = url)
+		
+		params = {
+			'Fields': 'BasicSyncInfo,CanDelete,PrimaryImageAspectRatio,ProductionYear,Status,EndDate',
+			'StartIndex': '0',
+			'SortBy': 'SortName',
+			'SortOrder': 'Ascending',
+			'EnableImageTypes': 'Primary,Backdrop,Thumb',
+			'ImageTypeLimit': '1',
+			'Recursive': 'true',
+			'SearchTerm': text,
+			'GroupProgramsBySeries': 'true',
+			'Limit': '50',
+			'X-Emby-Client': 'Emby Web',
+			'X-Emby-Device-Name': device_id[1],
+			'X-Emby-Device-Id': device_id[0],
+			'X-Emby-Client-Version': '4.8.8.0',
+			'X-Emby-Token': self.api,
+			'X-Emby-Language': 'en-us'
+		}
+		
+		debug(params = params)
+		
+		response = self.session.get(url, params=params)
+		data = response.json()
+		debug(data=data)
+		if list(filter(lambda k: 'debug' in k.lower(), os.environ)): jprint(data)
+		
+		result_albums = []
+		result_artists = []
+		result_tracks = []
+		
+		result_albums_sort = []
+		result_artists_sort = []
+		result_tracks_sort = []
+		
+		for item in data['Items']:
+			if item['Type'] == 'MusicAlbum':
+				artist_name = item['AlbumArtist']
+				album_name = item['Name']
+				result_albums_sort.append([artist_name, album_name, item['Id']])
+				result_albums.append(item)
+			
+			elif item['Type'] == 'MusicArtist':
+				artist_name = item['Name']
+				result_artists_sort.append([artist_name, item['Id']])
+				result_artists.append(item)
+			
+			elif item['Type'] == 'Audio':
+				artist_name = item['AlbumArtist']
+				album_name = item['Album']
+				song_name = item['Name']
+				result_tracks_sort.append([artist_name, album_name, song_name, item['Id']])
+				result_tracks.append(item)
+			
+		
+		# Display results
+		n = 1
+		if result_albums_sort:
+			print(make_colors("ALBUMS:", 'b', 'y'))
+			for album in result_albums_sort:
+				print(
+					make_colors(str(n).zfill(2), 'lc') + ". " + \
+					make_colors(album[0], 'ly') + " - " + \
+					make_colors(album[1], 'lw', 'm')
+				)
+				n += 1
+		
+		if result_artists_sort:
+			print(make_colors("ARTISTS:", 'b', 'lg'))
+			for artist in result_artists_sort:
+				print(
+					make_colors(str(n).zfill(2), 'lm') + ". " + \
+					make_colors(artist[0], 'lc')
+				)
+				n += 1
+		
+		if result_tracks_sort:
+			print(make_colors("TRACKS:", 'b', 'ly'))
+			for track in result_tracks_sort:
+				print(
+						make_colors(str(n).zfill(2), 'lc') + ". " + \
+						make_colors(track[2], 'lg') + " - " + \
+						make_colors(track[0], 'ly') + " - " + \
+						make_colors(track[1], 'lb')
+					)
+				n += 1
+		
+		note = make_colors("for 'album' after selected then show list of tracks/songs or you can select n1,n2,n3,nx or n1-nx or n1.n2.n3.nx to direct play album", 'lc') + ", " + \
+			make_colors("for 'artist' after selected then show list of albums", 'lg') + ", " + \
+			make_colors("for 'track' can select with n1,n2,n3,nx or n1-nx or n1.n2.n3.nx", 'y') + ", "
+		print("\n" + note)
+		q = input(make_colors('Select number:', 'lw', 'r') + " ")
+		
+		
+		
 	def usage(self):
 		parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 		parser.add_argument('-H', '--host', help = 'Host/Ip emby server', action = 'store')
@@ -709,7 +912,9 @@ class Embycli(object):
 			if  args.api:
 				self.api = args.api
 				self.session = self.get_config(args.host, args.port, args.api)
+
 			self.session = self.get_config(args.host, args.port, args.api, args.write_config)
+
 			if args.add:
 				for i in args.add:
 					self.add_library(i, args.name, args.itemid)
@@ -739,7 +944,8 @@ class Embycli(object):
 
 if __name__ == '__main__':
 	c = Embycli()
-	c.usage()
+	c.search(sys.argv[1])
+	#c.usage()
 	#c.get_api('192.168.43.2')
 	#c.get_api('127.0.0.1')
 	#pprint(c.get_library())

@@ -23,6 +23,8 @@ from configset import configset
 from pprint import pprint
 import json
 import inspect
+import signal
+
 
 class Embycli(object):
 
@@ -30,8 +32,8 @@ class Embycli(object):
 	config = configset(configname)
 	default_api = config.get_config('auth', 'api')
 	api = default_api
-	host = '127.0.0.1'
-	port = 8096
+	host = config.get_config('host', 'ip') or '127.0.0.1'
+	port = config.get_config('host', 'port') or 8096
 	url = None
 	headers = {'Content-Type': 'application/json'}
 	session = None
@@ -80,6 +82,8 @@ class Embycli(object):
 				sys.exit(make_colors("Invalid Port !", 'lw', 'lr', ['blink']))
 		if api and host and port:
 			for ap in api:
+				self.config.write_config('auth', 'api', ap)
+				self.config.write_config('auth', 'default', ap)
 				session = requests.Session()
 				headers = {'X-Emby-Token':str(ap)}
 				session.headers.update(headers)
@@ -101,7 +105,7 @@ class Embycli(object):
 				debug(content = content)
 				debug(url = a.url)
 				list_api = []
-				if not 'invalid' in content or not 'expired' in content:
+				if not 'invalid' in content.decode('utf-8') or not 'expired' in content.decode('utf-8'):
 					content = json.loads(content)
 					for it in content.get('Items'):
 						list_api.append(it.get('AccessToken'))
@@ -122,7 +126,7 @@ class Embycli(object):
 					debug(content = content)
 					debug(url = a.url)
 					list_api = []
-					if not 'invalid' in content or not 'expired' in content:
+					if not 'invalid' in content.decode('utf-8') or not 'expired' in content.decode('utf-8'):
 						content = json.loads(content)
 						for it in content.get('Items'):
 							list_api.append(it.get('AccessToken'))
@@ -419,11 +423,21 @@ class Embycli(object):
 			self.session = self.get_config()
 		url = self.url + "/emby/Library/VirtualFolders"
 		try:
-			content = self.session.get(url).json()
+			content = self.session.get(url)
+			debug(self_session_headers = self.session.headers)
+			debug(content = content.content)
+			debug(content_status_code = content.status_code)
+			if content.status_code == 200 and not 'invalid' in content.content.decode('utf-8') or not 'expired' in content.content.decode('utf-8'):
+				content = content.json()
+			else:
+				print(make_colors(content.content.decode('utf-8'), 'lw', 'r'))
+				os.kill(os.getpid(), signal.SIGTERM)
 		except:
+			if os.getenv('TRACEBACK') == '1':
+				print(make_colors(traceback.format_exc(), 'lw', 'bl'))
 			#print(make_colors("Invalid API or Error connection !", 'lw', 'lr', ['blink']))
 			print("\n")
-			sys.exit(make_colors("Invalid API or Error connection !", 'lw', 'lr', ['blink']))
+			sys.exit(make_colors("Invalid API or Error connection ! [1]", 'lw', 'lr', ['blink']))
 		debug(content = content)
 		return content
 
@@ -691,7 +705,7 @@ class Embycli(object):
 		except:
 			#print(make_colors("Invalid API or Error connection !", 'lw', 'lr', ['blink']))
 			print("\n")
-			sys.exit(make_colors("Invalid API or Error connection !", 'lw', 'lr', ['blink']))
+			sys.exit(make_colors("Invalid API or Error connection ! [2]", 'lw', 'lr', ['blink']))
 		debug(content = content)
 		return content
 
@@ -912,10 +926,10 @@ def usage():
 
 if __name__ == '__main__':
 	c = Embycli()
-	c.navigator()
+	# c.navigator()
 	# c.get_items(latest=False)
 	# c.get("/emby/Items")
-	# c.usage()
+	c.usage()
 	#c.get_api('192.168.43.2')
 	#c.get_api('127.0.0.1')
 	#pprint(c.get_library())

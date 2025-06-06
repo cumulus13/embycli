@@ -22,33 +22,18 @@ from pause import pause
 from configset import configset
 from pprint import pprint
 import json
-from jsoncolor import jprint
-#import inspect
+import inspect
+import signal
+
 
 class Embycli(object):
-<<<<<<< HEAD
-	def __init__(self, api = None, host = None, port = None):
-		self.configname = os.path.join(os.path.dirname(__file__), 'embycli.ini')
-		self.config = configset(self.configname)
-		self.api = api
-		self.default_api = self.config.get_config('auth', 'api')
-		self.host = host
-		self.port = port
-		self.url = None
-		self.headers = {'Content-Type': 'application/json'}
-		self.session = None
-		self.user_id = self.config.get_config('auth', 'user_id')
-		self.device_id = self.config.get_config('device', 'id')
-		self.device_name = ""
-=======
->>>>>>> 3126fca219756d7d65209e102ac0f43e08a56af5
 
 	configname = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'embycli.ini')
 	config = configset(configname)
 	default_api = config.get_config('auth', 'api')
 	api = default_api
-	host = '127.0.0.1'
-	port = 8096
+	host = config.get_config('host', 'ip') or '127.0.0.1'
+	port = config.get_config('host', 'port') or 8096
 	url = None
 	headers = {'Content-Type': 'application/json'}
 	session = None
@@ -73,8 +58,7 @@ class Embycli(object):
 		if not api:
 			sys.exit(make_colors("Invalid Token API !", 'lw', 'lr', ['blink']))
 		else:
-			if "," in api:
-				api = api.split(",")
+			api = api.split(",")
 
 		if not host:
 			host = self.host
@@ -119,7 +103,7 @@ class Embycli(object):
 				debug(content = content)
 				debug(url = a.url)
 				list_api = []
-				if not 'invalid' in content.decode('utf-8') or not 'expired' in content:
+				if not 'invalid' in content.decode() or not 'expired' in content:
 					content = json.loads(content)
 					for it in content.get('Items'):
 						list_api.append(it.get('AccessToken'))
@@ -140,7 +124,7 @@ class Embycli(object):
 					debug(content = content)
 					debug(url = a.url)
 					list_api = []
-					if not 'invalid' in content or not 'expired' in content:
+					if not 'invalid' in content.decode() or not 'expired' in content.decode():
 						content = json.loads(content)
 						for it in content.get('Items'):
 							list_api.append(it.get('AccessToken'))
@@ -150,15 +134,8 @@ class Embycli(object):
 			return list_api
 		return []
 
-<<<<<<< HEAD
-	def get_config(self, host = None, port = None, api = None, write_api = False): #requests.Session [Object]
-		'''
-		   @return: requests.Session [Object]
-		'''
-=======
 	@classmethod
 	def get_config(self, host = None, port = None, api = None, write_api = False):
->>>>>>> 3126fca219756d7d65209e102ac0f43e08a56af5
 		session = None
 		if not api:
 			api = self.api
@@ -233,8 +210,8 @@ class Embycli(object):
 			self.session = self.get_config()
 		url = self.url + "/emby/users"
 		return self.session.get(url, headers = self.headers).json()
-<<<<<<< HEAD
-	
+
+    @classmethod	
 	def get_user(self):
 		self.session = self.session or self.get_config()
 		debug(self_session = self.session)
@@ -274,10 +251,9 @@ class Embycli(object):
 		
 		return ''
 		
-=======
+
 
 	@classmethod
->>>>>>> 3126fca219756d7d65209e102ac0f43e08a56af5
 	def setting_get_dlna(self):
 		if not self.session:
 			self.session = self.get_config()
@@ -487,11 +463,21 @@ class Embycli(object):
 			self.session = self.get_config()
 		url = self.url + "/emby/Library/VirtualFolders"
 		try:
-			content = self.session.get(url).json()
+			content = self.session.get(url)
+			debug(self_session_headers = self.session.headers)
+			debug(content = content.content)
+			debug(content_status_code = content.status_code)
+			if content.status_code == 200 and not 'invalid' in content.content.decode('utf-8') or not 'expired' in content.content.decode('utf-8'):
+				content = content.json()
+			else:
+				print(make_colors(content.content.decode('utf-8'), 'lw', 'r'))
+				os.kill(os.getpid(), signal.SIGTERM)
 		except:
+			if os.getenv('TRACEBACK') == '1':
+				print(make_colors(traceback.format_exc(), 'lw', 'bl'))
 			#print(make_colors("Invalid API or Error connection !", 'lw', 'lr', ['blink']))
 			print("\n")
-			sys.exit(make_colors("Invalid API or Error connection !", 'lw', 'lr', ['blink']))
+			sys.exit(make_colors("Invalid API or Error connection ! [1]", 'lw', 'lr', ['blink']))
 		debug(content = content)
 		return content
 
@@ -759,7 +745,7 @@ class Embycli(object):
 		except:
 			#print(make_colors("Invalid API or Error connection !", 'lw', 'lr', ['blink']))
 			print("\n")
-			sys.exit(make_colors("Invalid API or Error connection !", 'lw', 'lr', ['blink']))
+			sys.exit(make_colors("Invalid API or Error connection ! [2]", 'lw', 'lr', ['blink']))
 		debug(content = content)
 		return content
 
@@ -878,7 +864,7 @@ class Embycli(object):
 				sys.exit(make_colors("system exit ... !", 'b', 'y'))
 		return q
 
-<<<<<<< HEAD
+    @classmethod
 	def get_devices(self):	
 		devices_url = f"{self.url}/emby/Sessions"
 		params = {
@@ -1035,7 +1021,7 @@ class Embycli(object):
 		
 		
 		
-=======
+
 	@classmethod
 	def format_number(self, number, length = 10):
 		number = str(number).strip()
@@ -1072,7 +1058,6 @@ class Embycli(object):
 
 
 	@classmethod
->>>>>>> 3126fca219756d7d65209e102ac0f43e08a56af5
 	def usage(self):
 		parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 		parser.add_argument('-H', '--host', help = 'Host/Ip emby server', action = 'store')
@@ -1105,9 +1090,7 @@ class Embycli(object):
 			if  args.api:
 				self.api = args.api
 				self.session = self.get_config(args.host, args.port, args.api)
-
 			self.session = self.get_config(args.host, args.port, args.api, args.write_config)
-
 			if args.add:
 				for i in args.add:
 					self.add_library(i, args.name, args.itemid)
@@ -1141,15 +1124,10 @@ def usage():
 
 if __name__ == '__main__':
 	c = Embycli()
-<<<<<<< HEAD
-	c.search(sys.argv[1])
-	#c.usage()
-=======
-	c.navigator()
+	# c.navigator()
 	# c.get_items(latest=False)
 	# c.get("/emby/Items")
-	# c.usage()
->>>>>>> 3126fca219756d7d65209e102ac0f43e08a56af5
+	c.usage()
 	#c.get_api('192.168.43.2')
 	#c.get_api('127.0.0.1')
 	#pprint(c.get_library())

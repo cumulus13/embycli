@@ -26,6 +26,7 @@ from jsoncolor import jprint
 #import inspect
 
 class Embycli(object):
+<<<<<<< HEAD
 	def __init__(self, api = None, host = None, port = None):
 		self.configname = os.path.join(os.path.dirname(__file__), 'embycli.ini')
 		self.config = configset(self.configname)
@@ -39,7 +40,27 @@ class Embycli(object):
 		self.user_id = self.config.get_config('auth', 'user_id')
 		self.device_id = self.config.get_config('device', 'id')
 		self.device_name = ""
+=======
+>>>>>>> 3126fca219756d7d65209e102ac0f43e08a56af5
 
+	configname = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'embycli.ini')
+	config = configset(configname)
+	default_api = config.get_config('auth', 'api')
+	api = default_api
+	host = '127.0.0.1'
+	port = 8096
+	url = None
+	headers = {'Content-Type': 'application/json'}
+	session = None
+	user = None
+
+	def __init__(self, api = None, host = None, port = None):
+		super(Embycli, self)
+		self.api = api or self.api
+		self.host = host or self.host
+		self.port = port or self.port
+
+	@classmethod
 	def get_api(self, host = None, port = None, api = None):
 		if not api:
 			api = self.api
@@ -129,10 +150,15 @@ class Embycli(object):
 			return list_api
 		return []
 
+<<<<<<< HEAD
 	def get_config(self, host = None, port = None, api = None, write_api = False): #requests.Session [Object]
 		'''
 		   @return: requests.Session [Object]
 		'''
+=======
+	@classmethod
+	def get_config(self, host = None, port = None, api = None, write_api = False):
+>>>>>>> 3126fca219756d7d65209e102ac0f43e08a56af5
 		session = None
 		if not api:
 			api = self.api
@@ -201,11 +227,13 @@ class Embycli(object):
 				session.headers.update(headers)
 		return session
 
+	@classmethod
 	def setting_get_users(self):
 		if not self.session:
 			self.session = self.get_config()
 		url = self.url + "/emby/users"
 		return self.session.get(url, headers = self.headers).json()
+<<<<<<< HEAD
 	
 	def get_user(self):
 		self.session = self.session or self.get_config()
@@ -246,12 +274,17 @@ class Embycli(object):
 		
 		return ''
 		
+=======
+
+	@classmethod
+>>>>>>> 3126fca219756d7d65209e102ac0f43e08a56af5
 	def setting_get_dlna(self):
 		if not self.session:
 			self.session = self.get_config()
 		url = self.url + "/emby/System/Configuration/dlna"
 		return self.session.get(url, headers = self.headers).json()
-
+	
+	@classmethod		
 	def format_argument(self, argument):
 		arg = re.split("_", argument)
 		debug(arg = arg)
@@ -260,7 +293,8 @@ class Embycli(object):
 			arg_1.append(str(i).title())
 		debug(arg_1 = arg_1)
 		return "".join(arg_1)
-
+	
+	@classmethod		
 	def setting_set_dlna(self, enable_server=True, enable_play_to=True, enable_debug_log=True, blast_alive_messages=True, client_discovery_interval_seconds=60, alive_message_interval_seconds=1800, default_user_id=None):
 		if not default_user_id:
 			default_user_id = self.setting_get_users()[0].get('Id')
@@ -309,6 +343,7 @@ class Embycli(object):
 		content = a.content
 		debug(content = content)
 
+	@classmethod
 	def pack_library(self, library):
 		list_name = []
 		all_list_name = []
@@ -336,11 +371,11 @@ class Embycli(object):
 
 		return list_name, all_list_name, all_list_itemid
 
-
+	@classmethod
 	def refresh_library(self, itemid=None, name = None, replace_all_image=False, replace_all_metadata=False):
 		headers = {'Content-Type': 'application/json'}
 		debug(self_url = self.url)
-#		http://127.0.0.1:8096/emby/Items/17753/Refresh?Recursive=true&ImageRefreshMode=Default&MetadataRefreshMode=Default&ReplaceAllImages=false&ReplaceAllMetadata=false&X-Emby-Client=Emby
+		#http://127.0.0.1:8096/emby/Items/17753/Refresh?Recursive=true&ImageRefreshMode=Default&MetadataRefreshMode=Default&ReplaceAllImages=false&ReplaceAllMetadata=false&X-Emby-Client=Emby
 		url = self.url + "/emby/Items/{0}/Refresh"
 		params = {
 			'Recursive':'true',
@@ -387,6 +422,7 @@ class Embycli(object):
 		debug(code = code)
 		return code
 
+	@classmethod
 	def print_paths(self, name=None, itemid=None, list_name = []):
 		debug(itemid = itemid)
 		#all_list_name = []
@@ -445,6 +481,7 @@ class Embycli(object):
 				return self.print_paths(list_name = list_name_return)
 		return list_name
 
+	@classmethod
 	def get_library(self):
 		if not self.session:
 			self.session = self.get_config()
@@ -458,6 +495,108 @@ class Embycli(object):
 		debug(content = content)
 		return content
 
+	@classmethod
+	def get_items(self, limit=10000000, fields="PrimaryImageAspectRatio,BasicSyncInfo,ProductionYear,Status,EndDate,CanDelete", image_type_limit=1, enable_image_types="Primary,Backdrop,Thumb", parent_id="3b10751f11093c6a4fe61529d4bea115", latest = True, sortby = "DateCreated,SortName", sortorder="Descending", includeitemtypes="Series", recursive=True, startindex=0):
+		if not self.session:
+			self.session = self.get_config()
+
+		if latest:
+			url = "/emby/Items/Latest"
+		else:
+			url = "/emby/Items"
+		debug(url = url, debug = True)
+
+		params = {
+			'Limit':limit,
+			'Fields': fields,
+			'ImageTypeLimit': image_type_limit,
+			'EnableImageTypes': enable_image_types,
+			'ParentId': parent_id,
+			'X-Emby-Client': "Emby"
+		}
+		if not latest:
+			params.update({
+				"SortBy": sortby,
+				"SortOrder":sortorder,
+				"IncludeItemType": includeitemtypes,
+				"Recursive": str(recursive).lower(),
+				"StartIndex": startindex,
+			})
+			if not limit or limit == 0:
+				params.pop("Limit")
+		debug(params=params)
+		content = self.get(url, params)
+		debug(content = content)
+		# pprint(content)
+		return content
+
+	@classmethod
+	def get_user_id(self):
+		if not self.session:
+			self.session = self.get_config()
+		params = {'X-Emby-Client':'Emby'}
+		debug(params=params)
+		url = self.url + "/Users"
+		try:
+			response = self.session.get(url, params = params)
+			debug(content = response.content)
+			print(response.content)
+			content = response.json()
+		except:
+			print("\n")
+			print(make_colors("ERRORS:", 'lw', 'lr', ['blink']))
+			print(make_colors(traceback.format_exc(), 'lw','bl'))
+			return False
+
+		debug(content = content)
+		# pprint(content)
+		if isinstance(content, list):
+			for i in content:
+				if i.get('Name') == self.config.get_config('user', 'name'):
+					self.user = i.get('Id')
+					break
+		return self.user
+
+	@classmethod
+	def get(self, url = "/emby/Users", params = {}):
+		if not self.session:
+			self.session = self.get_config()
+
+		if not self.user:
+			self.user = self.get_user_id()
+		if self.user and url == "/emby/Users":
+			url = url + "/" + self.user
+		else:
+			if self.user:
+				url = re.sub("/emby/", "", url)
+				url = "/emby/Users/" + self.user + "/" + url
+				url = re.sub("//", "/", url)
+		
+		if not self.host + ":" + str(self.port) in url:
+			url = self.url + url
+
+		debug(url = url, debug = True)
+		params.update({'X-Emby-Client':'Emby'})
+		debug(params=params, debug = True)
+		# pause()
+		try:
+			response = self.session.get(url, params = params)
+			debug(response_url = response.url, debug = True)
+			debug(content = response.content)
+			print(response.content)
+			content = response.json()
+		except:
+			print("\n")
+			print(make_colors("ERRORS:", 'lw', 'lr', ['blink']))
+			print(make_colors(traceback.format_exc(), 'lw','bl'))
+			return False
+
+		debug(content = content)
+		# pprint(content)
+		debug(url = url, debug = True)
+		return content
+
+	@classmethod
 	def delete_library(self, path, name=None, itemid=None):
 		if not name and not itemid:
 			library = self.get_library()
@@ -521,6 +660,7 @@ class Embycli(object):
 		debug(content = content)
 		return a.status_code
 
+	@classmethod
 	def create_library(self, name, dtype, path = []):
 		headers = {'Content-Type': 'application/json'}
 		# url = self.url + "/emby/Library/AddVirtualFolder?collectionType={}&refreshLibrary=true&name={}&X-Emby-Client=Emby Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=a4b67032-4dc0-4080-aaea-e4f0bbd74c93&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=80e519ca490243ef8e88d1ca5f711988".format(dtype, name)
@@ -623,6 +763,7 @@ class Embycli(object):
 		debug(content = content)
 		return content
 
+	@classmethod
 	def add_library(self, path, name = None, itemid = None):
 		headers = {'Content-Type': 'application/json'}
 		url = self.url + "/emby/Library/VirtualFolders/Paths?refreshLibrary=true"
@@ -700,6 +841,7 @@ class Embycli(object):
 		self.print_paths()
 		return name, itemid
 
+	@classmethod
 	def example_url(self):
 		#url get folder
 		url1 = "http://127.0.0.1:8096/emby/Users/01934680e84a418da88fd48736965014/Items?SortBy=IsFolder,SortName&SortOrder=Ascending&Recursive=false&Fields=BasicSyncInfo,CanDelete,PrimaryImageAspectRatio&ImageTypeLimit=1&EnableImageTypes=Primary,Backdrop,Thumb&StartIndex=0&Limit=50&ParentId=3b10751f11093c6a4fe61529d4bea115&X-Emby-Client=Emby"
@@ -723,7 +865,20 @@ class Embycli(object):
 		#delete info
 		url11 = "http://127.0.0.1:8096/emby/Items/232962/DeleteInfo?X-Emby-Client=Emby%20Web&X-Emby-Device-Name=Chrome&X-Emby-Device-Id=69df499a-715a-477d-b244-664c59d9846b&X-Emby-Client-Version=4.5.4.0&X-Emby-Token=d169a855d1df4eafa5a5f035b781c75f"
 
+	@classmethod
+	def print_nav(self, t = None):
+		if t == 1:
+			pass
+		else:
+			note = make_colors("select number:", "lw", 'bl') + " "
+		q = raw_input(note)
+		if q:
+			q = str(q).strip()
+			if q == 'x' or q == 'exit' or q == 'q' or q == 'quit':
+				sys.exit(make_colors("system exit ... !", 'b', 'y'))
+		return q
 
+<<<<<<< HEAD
 	def get_devices(self):	
 		devices_url = f"{self.url}/emby/Sessions"
 		params = {
@@ -880,6 +1035,44 @@ class Embycli(object):
 		
 		
 		
+=======
+	@classmethod
+	def format_number(self, number, length = 10):
+		number = str(number).strip()
+		if not str(number).isdigit():
+			return number
+		zeros = len(str(length)) - len(number)
+		r = ("0" * zeros) + str(number)
+		if len(r) == 1:
+			return "0" + r
+		return r
+
+	@classmethod
+	def navigator(self, parent_id = None, latest = True):
+		if parent_id:
+			data = self.get_items(parent_id = parent_id, latest = latest)
+		else:
+			data = self.get("/emby/Items")
+
+		# pprint(data)
+		n = 1
+		for i in data['Items']:
+			print(
+				make_colors(self.format_number(n, data['TotalRecordCount']) + ".", 'lc') + " " +\
+				make_colors(i.get("Name"), 'b', 'ly')
+			)
+			n+=1
+		q = self.print_nav()
+		if q:
+			id = data['Items'][int(q) - 1].get('Id')
+			debug(id = id)
+			if id:
+				return self.navigator(id, False)
+
+
+
+	@classmethod
+>>>>>>> 3126fca219756d7d65209e102ac0f43e08a56af5
 	def usage(self):
 		parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 		parser.add_argument('-H', '--host', help = 'Host/Ip emby server', action = 'store')
@@ -942,10 +1135,21 @@ class Embycli(object):
 			elif args.dlna_off:
 				self.setting_set_dlna(False)
 
+
+def usage():
+	return Embycli.usage()
+
 if __name__ == '__main__':
 	c = Embycli()
+<<<<<<< HEAD
 	c.search(sys.argv[1])
 	#c.usage()
+=======
+	c.navigator()
+	# c.get_items(latest=False)
+	# c.get("/emby/Items")
+	# c.usage()
+>>>>>>> 3126fca219756d7d65209e102ac0f43e08a56af5
 	#c.get_api('192.168.43.2')
 	#c.get_api('127.0.0.1')
 	#pprint(c.get_library())
